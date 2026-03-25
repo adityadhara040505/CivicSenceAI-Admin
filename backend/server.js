@@ -48,6 +48,8 @@ const analyticsRoutes = require('./routes/analytics');
 const schemeRoutes = require('./routes/schemes');
 const reportRoutes = require('./routes/reports');
 const settingsRoutes = require('./routes/settings');
+const scraperRoutes = require('./routes/scraper');
+const { initScheduledScraping } = require('./services/scheduler');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -57,11 +59,12 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/schemes', schemeRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/scraper', scraperRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'CivicSense AI API is running',
     timestamp: new Date().toISOString()
   });
@@ -90,6 +93,10 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+
+  // Initialize scheduled scraping (daily at 2 AM IST)
+  initScheduledScraping();
+  console.log('🕷️  Web scraper routes available at /api/scraper');
 });
 
 module.exports = app;

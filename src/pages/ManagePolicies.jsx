@@ -38,7 +38,7 @@ export default function ManagePolicies() {
       if (searchTerm) params.search = searchTerm
       if (filterCategory !== 'all') params.category = filterCategory
       if (filterStatus !== 'all') params.status = filterStatus
-      
+
       const result = await policyAPI.getAll(params)
       if (result.success) {
         setPolicies(result.data.policies || [])
@@ -78,7 +78,11 @@ export default function ManagePolicies() {
 
   const handleView = (policy) => {
     if (policy.filePath) {
-      window.open(`http://localhost:5000/${policy.filePath}`, '_blank')
+      if (policy.filePath.startsWith('http')) {
+        window.open(policy.filePath, '_blank')
+      } else {
+        window.open(`http://localhost:5000/${policy.filePath}`, '_blank')
+      }
     } else {
       alert('PDF file not available for this policy')
     }
@@ -206,7 +210,7 @@ Edit functionality will be implemented in a future update.
                     <div className="text-red-600">
                       <p className="font-semibold mb-2">Error Loading Policies</p>
                       <p className="text-sm text-gray-600">{error}</p>
-                      <button 
+                      <button
                         onClick={fetchPolicies}
                         className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                       >
@@ -249,21 +253,21 @@ Edit functionality will be implemented in a future update.
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <button 
+                        <button
                           className="p-2 hover:bg-blue-50 rounded-lg transition-colors group"
                           title="View PDF"
                           onClick={() => handleView(policy)}
                         >
                           <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
                         </button>
-                        <button 
+                        <button
                           className="p-2 hover:bg-green-50 rounded-lg transition-colors group"
                           title="Edit Policy"
                           onClick={() => handleEdit(policy)}
                         >
                           <Edit className="w-4 h-4 text-gray-400 group-hover:text-green-600" />
                         </button>
-                        <button 
+                        <button
                           className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
                           title="Delete"
                           onClick={() => handleDelete(policy._id)}
@@ -292,21 +296,20 @@ Edit functionality will be implemented in a future update.
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentPage === page
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
                     ? 'bg-primary-700 text-white'
                     : 'border border-gray-300 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 {page}
               </button>
             ))}
-            
+
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}

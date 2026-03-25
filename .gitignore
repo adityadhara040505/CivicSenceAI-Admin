@@ -28,3 +28,11 @@ dist-ssr
 .env
 .env.local
 .env.production
+
+# Backend
+backend/node_modules
+backend/chrome
+backend/uploads
+backend/scripts/runScraper.js
+.env
+

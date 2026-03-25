@@ -1,31 +1,31 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../components/ui'
-import { 
-  FileText, 
-  Users, 
-  UserCheck, 
+import {
+  FileText,
+  Users,
+  UserCheck,
   Activity,
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react'
-import { 
-  BarChart, 
-  Bar, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts'
 import { analyticsAPI, userAPI, policyAPI, schemeAPI } from '../services/api'
 
 function StatCard({ stat }) {
   const Icon = stat.icon
-  
+
   return (
     <Card className="relative overflow-hidden">
       <div className="flex items-start justify-between">
@@ -38,9 +38,8 @@ function StatCard({ stat }) {
             ) : (
               <ArrowDownRight className="w-4 h-4 text-red-600" />
             )}
-            <span className={`text-sm font-medium ${
-              stat.isPositive ? 'text-green-600' : 'text-red-600'
-            }`}>
+            <span className={`text-sm font-medium ${stat.isPositive ? 'text-green-600' : 'text-red-600'
+              }`}>
               {stat.change}
             </span>
             <span className="text-sm text-gray-500">vs last month</span>
@@ -166,17 +165,17 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={usersByState}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="state" 
+              <XAxis
+                dataKey="state"
                 tick={{ fontSize: 12 }}
                 angle={-45}
                 textAnchor="end"
                 height={80}
               />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ 
-                  borderRadius: '8px', 
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '8px',
                   border: '1px solid #e5e7eb',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
@@ -197,17 +196,17 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{ 
-                  borderRadius: '8px', 
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '8px',
                   border: '1px solid #e5e7eb',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="users" 
-                stroke="#1e40af" 
+              <Line
+                type="monotone"
+                dataKey="users"
+                stroke="#1e40af"
                 strokeWidth={3}
                 dot={{ fill: '#1e40af', strokeWidth: 2, r: 5 }}
               />
@@ -236,12 +235,16 @@ export default function Dashboard() {
               </div>
             ) : (
               recentPolicies.map((policy, index) => (
-                <div 
-                  key={policy._id || index} 
+                <div
+                  key={policy._id || index}
                   onClick={() => {
                     if (policy.filePath) {
-                      // Open PDF in new tab
-                      window.open(`http://localhost:5000/${policy.filePath}`, '_blank')
+                      // Open PDF/URL in new tab
+                      if (policy.filePath.startsWith('http')) {
+                        window.open(policy.filePath, '_blank')
+                      } else {
+                        window.open(`http://localhost:5000/${policy.filePath}`, '_blank')
+                      }
                     }
                   }}
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
@@ -258,9 +261,8 @@ export default function Dashboard() {
                       <span className="text-xs text-primary-600 font-medium">Click to view PDF</span>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    policy.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                  }`}>
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${policy.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                    }`}>
                     {policy.status}
                   </span>
                 </div>
@@ -282,8 +284,8 @@ export default function Dashboard() {
               </div>
             ) : (
               topSchemes.map((scheme, index) => (
-                <div 
-                  key={scheme._id || index} 
+                <div
+                  key={scheme._id || index}
                   className="p-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg"
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -298,7 +300,7 @@ export default function Dashboard() {
                     <span className="text-sm font-medium text-gray-900">{(scheme.totalApplications / 1000).toFixed(0)}K applications</span>
                   </div>
                   <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary-600 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${scheme.eligibilityRate}%` }}
                     ></div>
@@ -319,7 +321,7 @@ export default function Dashboard() {
               Upload and analyze policy documents with AI-powered insights
             </p>
           </div>
-          <button 
+          <button
             onClick={() => navigate('/upload-policy')}
             className="px-6 py-3 bg-white text-primary-700 font-semibold rounded-lg hover:bg-primary-50 transition-all shadow-lg"
           >

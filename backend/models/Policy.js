@@ -43,7 +43,12 @@ const policySchema = new mongoose.Schema({
   uploadedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
-    required: true
+    required: false,
+    default: null
+  },
+  isAutoScraped: {
+    type: Boolean,
+    default: false
   },
   uploadDate: {
     type: Date,

@@ -33,21 +33,21 @@ const upload = multer({
 // @access  Private
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { search, category, status, page = 1, limit = 10 } = req.query;
-    
+    const { search, category, status, page = 1, limit = 100 } = req.query;
+
     const query = {};
-    
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { title: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     if (category && category !== 'all') {
       query.category = category;
     }
-    
+
     if (status && status !== 'all') {
       query.status = status;
     }
@@ -232,7 +232,7 @@ router.get('/stats/overview', authMiddleware, async (req, res) => {
   try {
     const totalPolicies = await Policy.countDocuments();
     const activePolicies = await Policy.countDocuments({ status: 'Active' });
-    
+
     const totalViews = await Policy.aggregate([
       { $group: { _id: null, total: { $sum: '$views' } } }
     ]);
