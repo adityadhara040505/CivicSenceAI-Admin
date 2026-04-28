@@ -4,6 +4,10 @@ const axios = require('axios');
 const ScrapedDocument = require('../models/ScrapedDocument');
 const Policy = require('../models/Policy');
 const Scheme = require('../models/Scheme');
+const pdfProcessor = require('./pdfProcessor');
+const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
 // ============================================================
 // Configuration
@@ -70,6 +74,54 @@ const determinePolicyCategory = (title, content) => {
     const validCategories = ['Budget', 'Tax', 'Agriculture', 'MSME', 'Housing', 'Education', 'Sustainability', 'Technology', 'Employment'];
     return validCategories.includes(category) ? category : 'Budget'; // fallback to Budget
 };
+
+/**
+ * Downloads a PDF and uses pdfProcessor to call extraction API
+ */
+async function processPdf(pdfUrl, title, category) {
+    console.log(`      📄 Scraping PDF: ${title}`);
+    const tempDir = path.join(__dirname, '../uploads/temp');
+    const tempFilePath = path.join(tempDir, `temp_${Date.now()}.pdf`);
+
+    try {
+        // 1. Download PDF
+        const response = await axios({
+            url: pdfUrl,
+            method: 'GET',
+            responseType: 'stream'
+        });
+
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        const writer = fs.createWriteStream(tempFilePath);
+        response.data.pipe(writer);
+
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+
+        // 2. Use the central processor
+        const policy = await pdfProcessor.processPdfFile(tempFilePath, title, category, {
+            isAutoScraped: true,
+            filePath: pdfUrl // Keep original URL as path for scraped docs
+        });
+
+        // Clean up temp file (pdfProcessor might not know it's a temp file)
+        if (fs.existsSync(tempFilePath)) {
+            try { fs.unlinkSync(tempFilePath); } catch (e) { }
+        }
+
+        return policy;
+    } catch (err) {
+        if (fs.existsSync(tempFilePath)) {
+            try { fs.unlinkSync(tempFilePath); } catch (e) { }
+        }
+        throw err;
+    }
+}
 
 // Track active scraping sessions
 let scrapingStatus = {
@@ -654,9 +706,15 @@ async function scrapePolicies() {
                                 continue;
                             }
 
-                            // Some links might be external PDFs, skip those
+                            // If it's a PDF, download and call extraction API
                             if (doc.url.endsWith('.pdf')) {
-                                console.log(`      ⏭️  Skipping PDF: ${doc.title}`);
+                                try {
+                                    await processPdf(doc.url, doc.title, determinePolicyCategory(doc.title, doc.description));
+                                    results.added++;
+                                } catch (pdfErr) {
+                                    console.error(`      ⚠️ PDF extraction failed: ${pdfErr.message}`);
+                                    results.failed++;
+                                }
                                 continue;
                             }
 

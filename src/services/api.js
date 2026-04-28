@@ -17,7 +17,7 @@ export const authAPI = {
     });
     return response.json();
   },
-  
+
   getCurrentAdmin: async () => {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: getHeaders()
@@ -35,14 +35,14 @@ export const policyAPI = {
     });
     return response.json();
   },
-  
+
   getById: async (id) => {
     const response = await fetch(`${API_BASE_URL}/policies/${id}`, {
       headers: getHeaders()
     });
     return response.json();
   },
-  
+
   create: async (formData) => {
     const token = getToken();
     const response = await fetch(`${API_BASE_URL}/policies`, {
@@ -54,7 +54,7 @@ export const policyAPI = {
     });
     return response.json();
   },
-  
+
   update: async (id, data) => {
     const response = await fetch(`${API_BASE_URL}/policies/${id}`, {
       method: 'PUT',
@@ -63,7 +63,7 @@ export const policyAPI = {
     });
     return response.json();
   },
-  
+
   delete: async (id) => {
     const response = await fetch(`${API_BASE_URL}/policies/${id}`, {
       method: 'DELETE',
@@ -71,9 +71,17 @@ export const policyAPI = {
     });
     return response.json();
   },
-  
+
   getStats: async () => {
     const response = await fetch(`${API_BASE_URL}/policies/stats/overview`, {
+      headers: getHeaders()
+    });
+    return response.json();
+  },
+
+  reprocess: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/policies/${id}/reprocess`, {
+      method: 'POST',
       headers: getHeaders()
     });
     return response.json();
@@ -89,7 +97,7 @@ export const userAPI = {
     });
     return response.json();
   },
-  
+
   getStats: async () => {
     const response = await fetch(`${API_BASE_URL}/users/stats`, {
       headers: getHeaders()
@@ -106,7 +114,7 @@ export const analyticsAPI = {
     });
     return response.json();
   },
-  
+
   getUserAnalytics: async () => {
     const response = await fetch(`${API_BASE_URL}/analytics/users`, {
       headers: getHeaders()
@@ -123,14 +131,14 @@ export const schemeAPI = {
     });
     return response.json();
   },
-  
+
   getStats: async () => {
     const response = await fetch(`${API_BASE_URL}/schemes/stats`, {
       headers: getHeaders()
     });
     return response.json();
   },
-  
+
   create: async (data) => {
     const response = await fetch(`${API_BASE_URL}/schemes`, {
       method: 'POST',
@@ -159,7 +167,7 @@ export const settingsAPI = {
     });
     return response.json();
   },
-  
+
   updateAdmin: async (id, data) => {
     const response = await fetch(`${API_BASE_URL}/settings/admins/${id}`, {
       method: 'PUT',
@@ -168,7 +176,7 @@ export const settingsAPI = {
     });
     return response.json();
   },
-  
+
   createAdmin: async (data) => {
     const response = await fetch(`${API_BASE_URL}/settings/admins`, {
       method: 'POST',

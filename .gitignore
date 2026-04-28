@@ -36,3 +36,4 @@ backend/uploads
 backend/scripts/runScraper.js
 .env
 
+.vercel

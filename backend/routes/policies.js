@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const Policy = require('../models/Policy');
 const authMiddleware = require('../middleware/auth');
+const pdfProcessor = require('../services/pdfProcessor');
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -113,9 +114,19 @@ router.post('/', authMiddleware, upload.single('file'), async (req, res) => {
 
     await policy.save();
 
+    // Trigger PDF processing in the background
+    // We don't await this to keep the response fast, 
+    // but the policy status is 'Processing' by default
+    pdfProcessor.processPdfFile(req.file.path, title, category, {
+      policyId: policy._id,
+      uploadedBy: req.admin._id
+    }).catch(err => {
+      console.error(`Background PDF processing failed for ${policy._id}:`, err);
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Policy uploaded successfully',
+      message: 'Policy uploaded and processing started',
       data: { policy }
     });
   } catch (error) {
@@ -250,6 +261,56 @@ router.get('/stats/overview', authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+});
+
+// @route   POST /api/policies/:id/reprocess
+// @desc    Manually trigger PDF extraction/re-processing
+// @access  Private
+router.post('/:id/reprocess', authMiddleware, async (req, res) => {
+  try {
+    const policy = await Policy.findById(req.params.id);
+
+    if (!policy) {
+      return res.status(404).json({
+        success: false,
+        message: 'Policy not found'
+      });
+    }
+
+    // Set status to processing
+    policy.status = 'Processing';
+    await policy.save();
+
+    // Trigger processing (don't await if you want immediate response, but here we might want to wait if it's fast)
+    // Actually, manual re-process should probably be awaited so the UI can update immediately
+    try {
+      const updatedPolicy = await pdfProcessor.processPdfFile(policy.filePath, policy.title, policy.category, {
+        policyId: policy._id,
+        uploadedBy: req.admin._id
+      });
+
+      res.json({
+        success: true,
+        message: 'Re-processing successful',
+        data: { policy: updatedPolicy }
+      });
+    } catch (processErr) {
+      console.error('Re-processing error:', processErr);
+      policy.status = 'Active'; // Reset status if failed
+      await policy.save();
+
+      res.status(500).json({
+        success: false,
+        message: `Extraction failed: ${processErr.message}`
+      });
+    }
+  } catch (error) {
+    console.error('Reprocess policy error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during re-processing'
     });
   }
 });

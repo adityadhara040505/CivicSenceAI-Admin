@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Button, Badge } from '../components/ui'
-import { Search, Filter, Download, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Filter, Download, Edit, Trash2, Eye, ChevronLeft, ChevronRight, FileJson, X, Database } from 'lucide-react'
 import { policyAPI } from '../services/api'
 
 const categoryColors = {
@@ -24,6 +24,9 @@ export default function ManagePolicies() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedJson, setSelectedJson] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isReprocessing, setIsReprocessing] = useState(false)
   const itemsPerPage = 8
 
   useEffect(() => {
@@ -85,6 +88,30 @@ export default function ManagePolicies() {
       }
     } else {
       alert('PDF file not available for this policy')
+    }
+  }
+
+  const handleViewJson = (policy) => {
+    setSelectedJson(policy)
+    setIsModalOpen(true)
+  }
+
+  const handleReprocess = async (id) => {
+    try {
+      setIsReprocessing(true)
+      const result = await policyAPI.reprocess(id)
+      if (result.success) {
+        setSelectedJson(result.data.policy)
+        setPolicies(prev => prev.map(p => p._id === id ? result.data.policy : p))
+        // success toast or message could go here
+      } else {
+        alert(result.message || 'Extraction failed')
+      }
+    } catch (error) {
+      console.error('Error re-processing policy:', error)
+      alert('Failed to connect to extraction service')
+    } finally {
+      setIsReprocessing(false)
     }
   }
 
@@ -261,6 +288,13 @@ Edit functionality will be implemented in a future update.
                           <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
                         </button>
                         <button
+                          className="p-2 hover:bg-indigo-50 rounded-lg transition-colors group"
+                          title="View Extraction Data (JSON)"
+                          onClick={() => handleViewJson(policy)}
+                        >
+                          <FileJson className="w-4 h-4 text-gray-400 group-hover:text-indigo-600" />
+                        </button>
+                        <button
                           className="p-2 hover:bg-green-50 rounded-lg transition-colors group"
                           title="Edit Policy"
                           onClick={() => handleEdit(policy)}
@@ -302,8 +336,8 @@ Edit functionality will be implemented in a future update.
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === page
-                    ? 'bg-primary-700 text-white'
-                    : 'border border-gray-300 hover:bg-gray-100'
+                  ? 'bg-primary-700 text-white'
+                  : 'border border-gray-300 hover:bg-gray-100'
                   }`}
               >
                 {page}
@@ -320,6 +354,109 @@ Edit functionality will be implemented in a future update.
           </div>
         </div>
       </Card>
+
+      {/* JSON Data Modal */}
+      {isModalOpen && selectedJson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                  <Database className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Extracted Policy Data</h3>
+                  <p className="text-xs text-gray-500">{selectedJson.title}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+              {selectedJson.processedData && Object.keys(selectedJson.processedData).length > 0 ? (
+                <div className="space-y-4">
+                  {/* JSON Display */}
+                  <div className="relative group">
+                    <div className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(JSON.stringify(selectedJson.processedData, null, 2))}
+                      >
+                        Copy JSON
+                      </Button>
+                    </div>
+                    <pre className="bg-[#1e1e1e] text-indigo-100 p-6 rounded-xl overflow-x-auto shadow-inner text-sm font-mono leading-relaxed custom-scrollbar border border-gray-800">
+                      <code>
+                        {JSON.stringify(selectedJson.processedData, null, 2)}
+                      </code>
+                    </pre>
+                  </div>
+
+                  {/* Summary Preview */}
+                  {selectedJson.description && (
+                    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+                        AI Generated Summary
+                      </h4>
+                      <p className="text-sm text-gray-600 leading-relaxed italic">
+                        "{selectedJson.description}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <FileJson className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <h4 className="text-gray-900 font-semibold">No extraction data available</h4>
+                  <p className="text-gray-500 text-sm mt-1 max-w-xs">
+                    This document hasn't been processed by the extraction engine yet or it was uploaded before the system was integrated.
+                  </p>
+                  <Button
+                    variant="primary"
+                    className="mt-6"
+                    disabled={isReprocessing}
+                    onClick={() => handleReprocess(selectedJson._id)}
+                  >
+                    {isReprocessing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        Extracting...
+                      </>
+                    ) : (
+                      'Run Extraction'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-white flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => handleView(selectedJson)}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Original PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
